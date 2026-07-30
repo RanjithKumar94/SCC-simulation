@@ -204,21 +204,37 @@ function spawnAircraft(){
 
         if(ac.spawned) return;
 
-        const spawnTime =
-            timeToMinutes(ac.ccbETA) -
-            entryOffset(ac.type);
+        const etaMinutes = timeToMinutes(ac.ccbETA);
+        const nmPerMin = ac.speed / 60;   // knots -> NM/min
 
-        if(currentMinutes()>=spawnTime){
+        // The time at which this aircraft would naturally be
+        // 60NM out, if flying at its speed toward CCB to arrive
+        // exactly at its ETA.
+        const minutesFor60NM = nmPerMin > 0 ? 60 / nmPerMin : 0;
+        const naturalSpawnMinute = etaMinutes - minutesFor60NM;
 
-            const start = bearingToXY(ac.entryRadial,60);
+        if(currentMinutes() >= naturalSpawnMinute){
+
+            // How much flight time is actually left until ETA
+            // right now - if the sim started later than the
+            // "natural" spawn time, this is less than 60NM.
+            const minutesRemaining = etaMinutes - currentMinutes();
+
+            let spawnDistance = minutesRemaining * nmPerMin;
+
+            if(spawnDistance > 60) spawnDistance = 60;
+            if(spawnDistance < 0) spawnDistance = 0;
+
+            const start = bearingToXY(ac.entryRadial, spawnDistance);
 
             ac.x = start.x;
             ac.y = start.y;
+            ac.distance = spawnDistance;
 
             ac.spawned = true;
             ac.active = true;
 
-            console.log(ac.callsign+" entered");
+            console.log(ac.callsign+" entered at "+spawnDistance.toFixed(1)+" NM");
 
         }
 
@@ -413,7 +429,14 @@ if(ac.heading !== ac.targetHeading){
 
                 if(distToFixNM <= 1){
 
-                    // Arrived - drop the direct-to, hold heading
+                    // Arrived - join outbound on the same radial
+                    // from CCB this fix sits on (i.e. continue
+                    // along the route the fix belongs to)
+                    if(fixPos.bearing !== undefined){
+                        ac.targetHeading = Math.round(fixPos.bearing) % 360;
+                        ac.turnDirection = "SHORTEST";
+                    }
+
                     ac.directToFix = null;
 
                 }
