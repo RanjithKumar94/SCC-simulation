@@ -65,6 +65,16 @@ const FIXES = [
 
 ];
 
+function getFixByName(name){
+
+    const fix = FIXES.find(f => f.name === name);
+
+    if(!fix) return null;
+
+    return bearingToXY(fix.bearing, fix.distance);
+
+}
+
 function drawFixes(){
 
     FIXES.forEach(fix=>{
@@ -1397,6 +1407,7 @@ window.onload = function(){
         selectedAircraft.turnDirection = "SHORTEST";
         selectedAircraft.targetLevel = 20;   // 2000 ft, until established
         selectedAircraft.locIntercept = true;
+        selectedAircraft.directToFix = null;
         selectedAircraft.established = false;
 
     }
@@ -1473,6 +1484,23 @@ window.onload = function(){
     if(proj10Btn) proj10Btn.onclick = function(){ setProjectionButtonState(10); };
 
     setProjectionButtonState(0);
+
+    const dctButtons = document.querySelectorAll(".dctBtn");
+
+    dctButtons.forEach(btn=>{
+
+        btn.onclick = function(){
+
+            if(selectedAircraft == null){
+                alert("Select an aircraft first.");
+                return;
+            }
+
+            selectedAircraft.directToFix = btn.getAttribute("data-fix");
+
+        };
+
+    });
 
     const rangeSelect = document.getElementById("rangeSelect");
 
