@@ -38,6 +38,8 @@ function addAircraftRow(prefill){
 
         '<input type="text" class="ac-eta" placeholder="05:13" value="' + (prefill.ccbETA || "") + '">' +
 
+        '<input type="text" class="ac-squawk" placeholder="1000" maxlength="4" value="' + (prefill.squawk || "") + '">' +
+
         '<button type="button" class="ac-remove">X</button>';
 
     document.getElementById("aircraftRows").appendChild(row);
@@ -80,6 +82,7 @@ function startSimulatorFromSetup(){
         const targetLevel = parseInt(row.querySelector(".ac-targetlevel").value) || level;
         const speed = parseInt(row.querySelector(".ac-speed").value) || 300;
         const ccbETA = row.querySelector(".ac-eta").value.trim() || startTimeVal;
+        const squawk = row.querySelector(".ac-squawk").value.trim();
 
         const heading = (entryRadial + 180) % 360;
 
@@ -108,6 +111,7 @@ function startSimulatorFromSetup(){
             targetSpeed: speed,
 
             ccbETA: ccbETA,
+            squawk: squawk,   // blank = primary radar only (no transponder data)
 
             arrivalPhase: false,
             removeTimer: 0,
