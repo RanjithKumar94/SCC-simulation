@@ -71,7 +71,11 @@ function getFixByName(name){
 
     if(!fix) return null;
 
-    return bearingToXY(fix.bearing, fix.distance);
+    const pos = bearingToXY(fix.bearing, fix.distance);
+
+    pos.bearing = fix.bearing;
+
+    return pos;
 
 }
 
