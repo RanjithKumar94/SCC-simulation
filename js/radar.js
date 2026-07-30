@@ -754,6 +754,48 @@ function resolveRblPoint(pt, activeList){
 
 }
 
+// ======================================
+// Projected Track (speed vector)
+// Shows where each aircraft will be in
+// N minutes, based on true heading/speed
+// ======================================
+
+let projectionMinutes = 0;
+
+function drawProjectedPaths(){
+
+    if(projectionMinutes <= 0) return;
+
+    const activeList =
+    [...(typeof aircraft !== "undefined" ? aircraft : []),
+     ...(typeof departures !== "undefined" ? departures : [])]
+    .filter(ac => ac.active);
+
+    ctx.save();
+    ctx.strokeStyle = "#00FFFF";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4,4]);
+
+    activeList.forEach(ac=>{
+
+        const distanceNM = ac.speed * (projectionMinutes / 60);
+        const angle = (ac.heading - 90) * Math.PI / 180;
+
+        const endX = ac.x + Math.cos(angle) * nm(distanceNM);
+        const endY = ac.y + Math.sin(angle) * nm(distanceNM);
+
+        ctx.beginPath();
+        ctx.moveTo(ac.x, ac.y);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+
+    });
+
+    ctx.setLineDash([]);
+    ctx.restore();
+
+}
+
 function drawRBLs(){
 
     const activeList =
@@ -920,7 +962,7 @@ function drawAircraft(){
     // =====================================
 
     const LABEL_W = 100;
-    const LABEL_H = 46;
+    const LABEL_H = 60;
 
     const labels = activeList.map(ac=>{
 
@@ -1140,67 +1182,97 @@ function drawAircraft(){
 
 
 
-        // =====================================
-        // Callsign
-        // =====================================
+        const hasSquawk = ac.squawk !== undefined && ac.squawk !== null && ac.squawk !== "";
 
-        ctx.fillText(
-            ac.callsign,
-            labelX,
-            ly - 10
-        );
+        if(hasSquawk){
+
+            // =====================================
+            // Row 1: squawk code (A + code)
+            // =====================================
+
+            ctx.fillText(
+                "A" + ac.squawk,
+                labelX,
+                ly - 25
+            );
+
+
+            // =====================================
+            // Row 2: Callsign
+            // =====================================
+
+            ctx.fillText(
+                ac.callsign,
+                labelX,
+                ly - 10
+            );
 
 
 
-        // =====================================
-        // Row 2: actual level, target level,
-        // climb/descend rate (hundreds of ft/min)
-        // =====================================
+            // =====================================
+            // Row 3: actual level, target level,
+            // climb/descend rate (hundreds of ft/min)
+            // =====================================
 
-        const currentFL =
-        Math.round(ac.level);
+            const currentFL =
+            Math.round(ac.level);
 
-        const assignedFL =
-        Math.round(ac.targetLevel);
+            const assignedFL =
+            Math.round(ac.targetLevel);
 
-        let rateText = "";
+            let rateText = "";
 
-        if(ac.verticalSpeed > 0){
+            if(ac.verticalSpeed > 0){
 
-            rateText =
-            " ↑" + Math.round(Math.abs(ac.verticalSpeed)/100);
+                rateText =
+                " ↑" + Math.round(Math.abs(ac.verticalSpeed)/100);
+
+            }
+            else if(ac.verticalSpeed < 0){
+
+                rateText =
+                " ↓" + Math.round(Math.abs(ac.verticalSpeed)/100);
+
+            }
+
+            const levelText =
+            currentFL + " " + assignedFL + rateText;
+
+            ctx.fillText(
+                levelText,
+                labelX,
+                ly + 5
+            );
+
+
+
+            // =====================================
+            // Row 4: speed
+            // =====================================
+
+            const speedText =
+            Math.round(ac.speed) + "KT";
+
+            ctx.fillText(
+                speedText,
+                labelX,
+                ly + 20
+            );
 
         }
-        else if(ac.verticalSpeed < 0){
+        else{
 
-            rateText =
-            " ↓" + Math.round(Math.abs(ac.verticalSpeed)/100);
+            // Primary radar only - no transponder data.
+            // The only thing shown is the controller's own
+            // memory of the assigned level, nothing else.
+
+            ctx.fillText(
+                String(Math.round(ac.targetLevel)),
+                labelX,
+                ly - 10
+            );
 
         }
-
-        const levelText =
-        currentFL + " " + assignedFL + rateText;
-
-        ctx.fillText(
-            levelText,
-            labelX,
-            ly + 5
-        );
-
-
-
-        // =====================================
-        // Row 3: speed
-        // =====================================
-
-        const speedText =
-        Math.round(ac.speed) + "KT";
-
-        ctx.fillText(
-            speedText,
-            labelX,
-            ly + 20
-        );
 
 
 
@@ -1261,6 +1333,7 @@ function drawRadar(){
 
     drawUnknownBlips();
     drawAircraft();
+    drawProjectedPaths();
     drawRBLs();
 
     ctx.restore();
@@ -1363,6 +1436,37 @@ window.onload = function(){
         };
 
     }
+
+    function setProjectionButtonState(mins){
+
+        projectionMinutes = mins;
+
+        const btns = {
+            0: document.getElementById("projOffBtn"),
+            2: document.getElementById("proj2Btn"),
+            5: document.getElementById("proj5Btn"),
+            10: document.getElementById("proj10Btn")
+        };
+
+        Object.keys(btns).forEach(key=>{
+            if(btns[key]){
+                btns[key].style.background = (Number(key) === mins) ? "#007700" : "";
+            }
+        });
+
+    }
+
+    const projOffBtn = document.getElementById("projOffBtn");
+    const proj2Btn = document.getElementById("proj2Btn");
+    const proj5Btn = document.getElementById("proj5Btn");
+    const proj10Btn = document.getElementById("proj10Btn");
+
+    if(projOffBtn) projOffBtn.onclick = function(){ setProjectionButtonState(0); };
+    if(proj2Btn) proj2Btn.onclick = function(){ setProjectionButtonState(2); };
+    if(proj5Btn) proj5Btn.onclick = function(){ setProjectionButtonState(5); };
+    if(proj10Btn) proj10Btn.onclick = function(){ setProjectionButtonState(10); };
+
+    setProjectionButtonState(0);
 
     const rangeSelect = document.getElementById("rangeSelect");
 
@@ -1512,11 +1616,11 @@ const world = screenToWorld(mx, my);
         const boxLeft  = dirRight ? labelX : labelX - 100;
         const boxRight = dirRight ? labelX + 100 : labelX;
 
-        // Label hit box - covers the whole 3-line label, click anywhere on it
+        // Label hit box - covers the whole label (up to 4 lines), click anywhere on it
         if(
             world.x >= boxLeft &&
             world.x <= boxRight &&
-            world.y >= ly - 20 &&
+            world.y >= ly - 35 &&
             world.y <= ly + 30
         ){
 console.log(
