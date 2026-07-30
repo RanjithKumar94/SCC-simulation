@@ -102,6 +102,8 @@ function createDeparture(runway){
 
         targetSpeed:250,
 
+        squawk:"1200",
+
 
         active:true
 
