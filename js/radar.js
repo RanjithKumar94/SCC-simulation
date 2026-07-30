@@ -1196,21 +1196,25 @@ function drawAircraft(){
                 ly - 25
             );
 
+        }
+
+
+        // =====================================
+        // Callsign - always shown regardless of
+        // squawk state
+        // =====================================
+
+        ctx.fillText(
+            ac.callsign,
+            labelX,
+            ly - 10
+        );
+
+
+        if(hasSquawk){
 
             // =====================================
-            // Row 2: Callsign
-            // =====================================
-
-            ctx.fillText(
-                ac.callsign,
-                labelX,
-                ly - 10
-            );
-
-
-
-            // =====================================
-            // Row 3: actual level, target level,
+            // Row: actual level, target level,
             // climb/descend rate (hundreds of ft/min)
             // =====================================
 
@@ -1247,7 +1251,7 @@ function drawAircraft(){
 
 
             // =====================================
-            // Row 4: speed
+            // Row: speed
             // =====================================
 
             const speedText =
@@ -1263,13 +1267,15 @@ function drawAircraft(){
         else{
 
             // Primary radar only - no transponder data.
-            // The only thing shown is the controller's own
-            // memory of the assigned level, nothing else.
+            // Callsign already shown above; the only other
+            // thing shown is the controller's own memory of
+            // the assigned level, nothing else (no actual
+            // altitude, no speed).
 
             ctx.fillText(
                 String(Math.round(ac.targetLevel)),
                 labelX,
-                ly - 10
+                ly + 5
             );
 
         }
@@ -1636,6 +1642,11 @@ console.log(
 
             // Fill control panel
             document.getElementById("callsign").value = ac.callsign;
+
+            const squawkEl = document.getElementById("squawkInput");
+            if(squawkEl){
+                squawkEl.value = ac.squawk || "";
+            }
             document.getElementById("heading").value = ac.targetHeading;
             document.getElementById("level").value = ac.targetLevel;
 
