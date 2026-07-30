@@ -111,8 +111,10 @@ document.getElementById("applyBtn").onclick = function(){
 
     const squawkEl = document.getElementById("squawkInput");
 
-    if(hdg !== "")
+    if(hdg !== ""){
         selectedAircraft.targetHeading = parseInt(hdg) % 360;
+        selectedAircraft.directToFix = null;
+    }
 
     if(lvl !== "")
         selectedAircraft.targetLevel = parseInt(lvl);
@@ -392,6 +394,49 @@ if(ac.heading !== ac.targetHeading){
 
 }
 
+
+        // ===============================
+        // Direct To Fix - continuously home
+        // in on the fix until reached
+        // ===============================
+
+        if(ac.directToFix && typeof getFixByName === "function"){
+
+            const fixPos = getFixByName(ac.directToFix);
+
+            if(fixPos){
+
+                const fdx = fixPos.x - ac.x;
+                const fdy = fixPos.y - ac.y;
+
+                const distToFixNM = Math.sqrt(fdx*fdx + fdy*fdy) / PIXELS_PER_NM;
+
+                if(distToFixNM <= 1){
+
+                    // Arrived - drop the direct-to, hold heading
+                    ac.directToFix = null;
+
+                }
+                else{
+
+                    let bearingToFix =
+                    (Math.atan2(fdy, fdx) * 180 / Math.PI) + 90;
+
+                    bearingToFix = (bearingToFix + 360) % 360;
+
+                    ac.targetHeading = Math.round(bearingToFix) % 360;
+                    ac.turnDirection = "SHORTEST";
+
+                }
+
+            }
+            else{
+
+                ac.directToFix = null;
+
+            }
+
+        }
 
         // ===============================
 // Distance to TOUCHDOWN, not just to CCB
