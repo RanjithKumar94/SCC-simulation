@@ -109,6 +109,8 @@ document.getElementById("applyBtn").onclick = function(){
     const descentEl = document.getElementById("descentRateInput");
     const descentRate = descentEl ? descentEl.value : "";
 
+    const squawkEl = document.getElementById("squawkInput");
+
     if(hdg !== "")
         selectedAircraft.targetHeading = parseInt(hdg) % 360;
 
@@ -123,6 +125,12 @@ document.getElementById("applyBtn").onclick = function(){
 
     if(descentRate !== "")
         selectedAircraft.descentRateFpm = parseInt(descentRate);
+
+    // Squawk applies even when blank - that's how you clear it
+    // to simulate the aircraft going primary-only.
+    if(squawkEl){
+        selectedAircraft.squawk = squawkEl.value.trim();
+    }
     const turn =
 document.querySelector('input[name="turnDir"]:checked').value;
 
