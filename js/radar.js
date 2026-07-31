@@ -266,6 +266,11 @@ let activeRunwayDirection = "26";   // exact selection: "08","26","15","33"
 // just hides aircraft further than this from CCB
 let displayRange = 60;
 
+// Set from the setup screen before the exercise starts.
+// When false, VAD-99 doesn't apply: DUMAS traffic just
+// continues outbound on R120 instead of the 320/R088 route.
+let vad99Active = true;
+
 function getActiveRunway(){
     return RUNWAYS[activeRunway];
 }
@@ -691,6 +696,7 @@ const VAD99 = [
 
 function drawVAD99(){
 
+    if(!vad99Active) return;
     if(VAD99.length === 0) return;
 
     ctx.save();
