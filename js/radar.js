@@ -33,6 +33,8 @@ const ROUTE_COLOR = "#555555";
 const TEXT_COLOR = "#999999";
 const AIRCRAFT_COLOR = "#00FF00";
 const AIRCRAFT_SELECTED_COLOR = "#FFFF00";
+const EMERGENCY_SQUAWKS = ["7500", "7600", "7700"];
+const EMERGENCY_BLINK_COLOR = "#FF0000";
 
 // ATS Routes
 const ROUTES = [
@@ -1196,8 +1198,24 @@ function drawAircraft(){
         }
 
 
+        // =====================================
+        // Emergency squawk (7500/7600/7700) -
+        // blink the whole label red until the
+        // controller clicks/acknowledges it
+        // =====================================
+
+        const isEmergencySquawk =
+        ac.squawk && EMERGENCY_SQUAWKS.includes(ac.squawk);
+
+        const blinkOn = Math.floor(Date.now() / 400) % 2 === 0;
+
+        const labelColor =
+        (isEmergencySquawk && !ac.emergencyAck && blinkOn)
+        ? EMERGENCY_BLINK_COLOR
+        : acColor;
+
         ctx.textAlign = align;
-        ctx.fillStyle = acColor;
+        ctx.fillStyle = labelColor;
         ctx.font = "14px Consolas";
 
 
@@ -1680,6 +1698,10 @@ console.log(
 );
             // Select aircraft
             selectedAircraft = ac;
+
+            // Acknowledge any emergency squawk (7500/7600/7700) -
+            // stops the label blinking red until it changes again
+            ac.emergencyAck = true;
 
             // Rotate label 45°
             ac.labelAngle = (ac.labelAngle + 45) % 360;
