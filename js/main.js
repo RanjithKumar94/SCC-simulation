@@ -765,6 +765,11 @@ if(ac.approach){
 
             ac.landed = true;
 
+            if(!ac.reportedLanding && typeof logLanding === "function"){
+                ac.reportedLanding = true;
+                logLanding(ac);
+            }
+
         }
 
 
@@ -823,5 +828,13 @@ setInterval(function(){
 }
 
     moveUnknownBlips();
+
+    if(typeof checkSeparation === "function"){
+        checkSeparation();
+    }
+
+    if(typeof checkTerrain === "function"){
+        checkTerrain();
+    }
 
 },1000);
