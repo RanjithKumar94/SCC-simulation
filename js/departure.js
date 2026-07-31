@@ -258,6 +258,84 @@ if(ac.heading !== ac.targetHeading){
 
 }
 
+        // ===============================
+        // Direct To Fix - continuously home
+        // in on the fix until reached
+        // ===============================
+
+        if(ac.directToFix && typeof getFixByName === "function"){
+
+            const fixPos = getFixByName(ac.directToFix);
+
+            if(fixPos){
+
+                const fdx = fixPos.x - ac.x;
+                const fdy = fixPos.y - ac.y;
+
+                const distToFixNM = Math.sqrt(fdx*fdx + fdy*fdy) / PIXELS_PER_NM;
+
+                if(distToFixNM <= 1){
+
+                    if(ac.directToFix === "DUMAS"){
+
+                        // Special published route: DUMAS -> track 320
+                        ac.targetHeading = 320;
+                        ac.turnDirection = "SHORTEST";
+                        ac.viaDumasRoute = true;
+
+                    }
+                    else if(fixPos.bearing !== undefined){
+
+                        ac.targetHeading = Math.round(fixPos.bearing) % 360;
+                        ac.turnDirection = "SHORTEST";
+
+                    }
+
+                    ac.directToFix = null;
+
+                }
+                else{
+
+                    let bearingToFix =
+                    (Math.atan2(fdy, fdx) * 180 / Math.PI) + 90;
+
+                    bearingToFix = (bearingToFix + 360) % 360;
+
+                    ac.targetHeading = Math.round(bearingToFix) % 360;
+                    ac.turnDirection = "SHORTEST";
+
+                }
+
+            }
+            else{
+
+                ac.directToFix = null;
+
+            }
+
+        }
+
+        // Published route: once via DUMAS on track 320,
+        // automatically establish R088 inbound at 20NM from
+        // CCB - unless the controller has since given other
+        // instructions (viaDumasRoute gets cleared then).
+        if(ac.viaDumasRoute){
+
+            const ddx = ac.x - CCB.x;
+            const ddy = ac.y - CCB.y;
+
+            const distToCCB = Math.sqrt(ddx*ddx + ddy*ddy) / PIXELS_PER_NM;
+
+            if(distToCCB <= 20){
+
+                ac.targetHeading = 268;   // inbound on R088
+                ac.turnDirection = "SHORTEST";
+                ac.viaDumasRoute = false;
+
+            }
+
+        }
+
         // 5 NM per minute
 
         if(!ac.trail) ac.trail = [];
