@@ -114,6 +114,7 @@ document.getElementById("applyBtn").onclick = function(){
     if(hdg !== ""){
         selectedAircraft.targetHeading = parseInt(hdg) % 360;
         selectedAircraft.directToFix = null;
+        selectedAircraft.viaDumasRoute = false;
     }
 
     if(lvl !== "")
@@ -429,12 +430,22 @@ if(ac.heading !== ac.targetHeading){
 
                 if(distToFixNM <= 1){
 
-                    // Arrived - join outbound on the same radial
-                    // from CCB this fix sits on (i.e. continue
-                    // along the route the fix belongs to)
-                    if(fixPos.bearing !== undefined){
+                    if(ac.directToFix === "DUMAS"){
+
+                        // Special published route: DUMAS -> track 320
+                        ac.targetHeading = 320;
+                        ac.turnDirection = "SHORTEST";
+                        ac.viaDumasRoute = true;
+
+                    }
+                    else if(fixPos.bearing !== undefined){
+
+                        // Arrived - join outbound on the same radial
+                        // from CCB this fix sits on (i.e. continue
+                        // along the route the fix belongs to)
                         ac.targetHeading = Math.round(fixPos.bearing) % 360;
                         ac.turnDirection = "SHORTEST";
+
                     }
 
                     ac.directToFix = null;
@@ -471,6 +482,18 @@ const touchdownDistance = Math.sqrt(
     (ac.x - CCB.x)*(ac.x - CCB.x) +
     (ac.y - CCB.y)*(ac.y - CCB.y)
 ) / PIXELS_PER_NM;
+
+// Published route: once via DUMAS on track 320,
+// automatically establish R088 inbound at 20NM from
+// CCB - unless the controller has since given other
+// instructions (viaDumasRoute gets cleared then).
+if(ac.viaDumasRoute && touchdownDistance <= 20){
+
+    ac.targetHeading = 268;   // inbound on R088
+    ac.turnDirection = "SHORTEST";
+    ac.viaDumasRoute = false;
+
+}
 
 // ===============================
 // Localiser capture: if cleared to
