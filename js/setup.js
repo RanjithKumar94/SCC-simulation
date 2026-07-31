@@ -65,6 +65,10 @@ function startSimulatorFromSetup(){
     simMinute = parseInt(parts[1]) || 0;
     simSecond = 0;
 
+    // ---- VAD-99 ----
+    const vadEl = document.getElementById("setupVad99Active");
+    vad99Active = vadEl ? vadEl.checked : true;
+
     // ---- Aircraft ----
     const rows = document.querySelectorAll("#aircraftRows .acRow");
 
