@@ -132,7 +132,16 @@ document.getElementById("applyBtn").onclick = function(){
     // Squawk applies even when blank - that's how you clear it
     // to simulate the aircraft going primary-only.
     if(squawkEl){
-        selectedAircraft.squawk = squawkEl.value.trim();
+
+        const newSquawk = squawkEl.value.trim();
+        selectedAircraft.squawk = newSquawk;
+
+        // Emergency squawk set - start the label blinking
+        // red until the controller clicks/acknowledges it
+        if(["7500","7600","7700"].includes(newSquawk)){
+            selectedAircraft.emergencyAck = false;
+        }
+
     }
     const turn =
 document.querySelector('input[name="turnDir"]:checked').value;
