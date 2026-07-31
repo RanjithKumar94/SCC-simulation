@@ -430,9 +430,10 @@ if(ac.heading !== ac.targetHeading){
 
                 if(distToFixNM <= 1){
 
-                    if(ac.directToFix === "DUMAS"){
+                    if(ac.directToFix === "DUMAS" && vad99Active){
 
                         // Special published route: DUMAS -> track 320
+                        // (only applies while VAD-99 is active)
                         ac.targetHeading = 320;
                         ac.turnDirection = "SHORTEST";
                         ac.viaDumasRoute = true;
