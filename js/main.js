@@ -235,6 +235,15 @@ function spawnAircraft(){
             ac.spawned = true;
             ac.active = true;
 
+            // Published VAD-99 route: aircraft entering via R120
+            // (G473 SE) fly straight over DUMAS by default anyway,
+            // so arm the DUMAS routing automatically instead of
+            // waiting for the controller to press DCT-DUMAS. This
+            // reuses the existing DUMAS -> 320 -> R088 logic as-is.
+            if(ac.entryRadial === 120 && vad99Active){
+                ac.directToFix = "DUMAS";
+            }
+
             console.log(ac.callsign+" entered at "+spawnDistance.toFixed(1)+" NM");
 
         }
