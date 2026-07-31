@@ -1413,6 +1413,7 @@ window.onload = function(){
         selectedAircraft.locIntercept = true;
         selectedAircraft.directToFix = null;
         selectedAircraft.established = false;
+        selectedAircraft.viaDumasRoute = false;
 
     }
 
@@ -1448,6 +1449,8 @@ window.onload = function(){
             selectedAircraft.established = false;
             selectedAircraft.approach = false;
             selectedAircraft.arrivalPhase = false;
+            selectedAircraft.viaDumasRoute = false;
+            selectedAircraft.directToFix = null;
 
             // Go around: climb, keep current heading
             selectedAircraft.targetHeading = Math.round(selectedAircraft.heading) % 360;
@@ -1501,6 +1504,9 @@ window.onload = function(){
             }
 
             selectedAircraft.directToFix = btn.getAttribute("data-fix");
+            selectedAircraft.established = false;
+            selectedAircraft.locIntercept = false;
+            selectedAircraft.viaDumasRoute = false;
 
         };
 
