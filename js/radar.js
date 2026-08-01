@@ -193,6 +193,32 @@ function bearingToXY(bearing, distance){
 }
 
 // ======================================
+// Intersection of infinite line p1-p2
+// with infinite line p3-p4, or null if
+// parallel. Used to find where the
+// approach funnel lines cross the
+// traffic circuit box edge.
+// ======================================
+
+function lineIntersect(p1, p2, p3, p4){
+
+    const x1=p1.x, y1=p1.y, x2=p2.x, y2=p2.y;
+    const x3=p3.x, y3=p3.y, x4=p4.x, y4=p4.y;
+
+    const denom = (x1-x2)*(y3-y4) - (y1-y2)*(x3-x4);
+
+    if(Math.abs(denom) < 1e-9) return null;
+
+    const t = ((x1-x3)*(y3-y4) - (y1-y3)*(x3-x4)) / denom;
+
+    return {
+        x: x1 + t*(x2-x1),
+        y: y1 + t*(y2-y1)
+    };
+
+}
+
+// ======================================
 // Generic projection from ANY origin point
 // (used for NDB-based routes, e.g. PJ NDB)
 // ======================================
@@ -354,13 +380,12 @@ const RWY_LANDING_HEADING = {"08":80, "26":260, "15":155, "33":335};
 // Two lines splaying outward (localiser capture "feathers"),
 // apex at 8.5 NM from touchdown on the extended centreline,
 // each 10 NM long. Drawn as open rays - never connected to
-// each other. Values as specified directly (not derived from
-// RWY_LANDING_HEADING, since 15/33 disagree with that table).
+// each other.
 const APPROACH_FUNNEL_BEARINGS = {
     "08": [230, 290],
     "26": [50, 110],
-    "15": [125, 185],
-    "33": [305, 5]
+    "15": [305, 5],
+    "33": [125, 185]
 };
 
 const APPROACH_FUNNEL_APEX_NM = 8.5;
@@ -599,42 +624,91 @@ function drawTrafficCircuit(){
 
     const offset = nm(5);
 
-    const top1 = {
-        x:end1.x + px*offset,
-        y:end1.y + py*offset
-    };
-
-    const top2 = {
-        x:end2.x + px*offset,
-        y:end2.y + py*offset
-    };
-
-    const bot1 = {
-        x:end1.x - px*offset,
-        y:end1.y - py*offset
-    };
-
-    const bot2 = {
-        x:end2.x - px*offset,
-        y:end2.y - py*offset
-    };
+    const top1 = {x:end1.x + px*offset, y:end1.y + py*offset};
+    const top2 = {x:end2.x + px*offset, y:end2.y + py*offset};
+    const bot1 = {x:end1.x - px*offset, y:end1.y - py*offset};
+    const bot2 = {x:end2.x - px*offset, y:end2.y - py*offset};
 
     ctx.strokeStyle="#FFFFFF";
     ctx.lineWidth=2;
+
+    // Long edges (top & bottom), full length, unaffected
     ctx.beginPath();
-    ctx.moveTo(end1.x,end1.y);
-    ctx.lineTo(top1.x,top1.y);
+    ctx.moveTo(top1.x,top1.y);
     ctx.lineTo(top2.x,top2.y);
-    ctx.lineTo(end2.x,end2.y);
     ctx.stroke();
 
-    // Lower box
     ctx.beginPath();
-    ctx.moveTo(end1.x,end1.y);
-    ctx.lineTo(bot1.x,bot1.y);
+    ctx.moveTo(bot1.x,bot1.y);
     ctx.lineTo(bot2.x,bot2.y);
-    ctx.lineTo(end2.x,end2.y);
     ctx.stroke();
+
+    // Which end faces the active approach funnel
+    const nearIsEnd1 = activeRunwayDirection === rwy.label1;
+    const nearIsEnd2 = activeRunwayDirection === rwy.label2;
+
+    const nearTop = nearIsEnd1 ? top1 : top2;
+    const nearBot = nearIsEnd1 ? bot1 : bot2;
+    const farTop  = nearIsEnd1 ? top2 : top1;
+    const farBot  = nearIsEnd1 ? bot2 : bot1;
+
+    // Far cap - plain full width edge, no funnel on this side
+    ctx.beginPath();
+    ctx.moveTo(farTop.x,farTop.y);
+    ctx.lineTo(farBot.x,farBot.y);
+    ctx.stroke();
+
+    // Near cap - a gap is cut out exactly where the two approach
+    // funnel lines cross it, so the box doesn't overlap the funnel
+    const funnelBearings = APPROACH_FUNNEL_BEARINGS[activeRunwayDirection];
+    let gapCut = false;
+
+    if(funnelBearings && (nearIsEnd1 || nearIsEnd2)){
+
+        const touchdown = getTouchdownPoint(activeRunwayDirection);
+        const approachBearing = getApproachBearing(activeRunwayDirection);
+        const apex = pointFromXY(touchdown, approachBearing, APPROACH_FUNNEL_APEX_NM);
+
+        const tipA = pointFromXY(apex, funnelBearings[0], APPROACH_FUNNEL_LENGTH_NM);
+        const tipB = pointFromXY(apex, funnelBearings[1], APPROACH_FUNNEL_LENGTH_NM);
+
+        const crossA = lineIntersect(apex, tipA, nearTop, nearBot);
+        const crossB = lineIntersect(apex, tipB, nearTop, nearBot);
+
+        if(crossA && crossB){
+
+            const dA = (crossA.x-nearTop.x)*px + (crossA.y-nearTop.y)*py;
+            const dB = (crossB.x-nearTop.x)*px + (crossB.y-nearTop.y)*py;
+
+            const upperCross = dA > dB ? crossA : crossB;
+            const lowerCross = dA > dB ? crossB : crossA;
+
+            ctx.beginPath();
+            ctx.moveTo(nearTop.x, nearTop.y);
+            ctx.lineTo(upperCross.x, upperCross.y);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(lowerCross.x, lowerCross.y);
+            ctx.lineTo(nearBot.x, nearBot.y);
+            ctx.stroke();
+
+            gapCut = true;
+
+        }
+
+    }
+
+    if(!gapCut){
+
+        // No funnel on this side (or geometry didn't cross) -
+        // draw the near cap as a plain full width edge
+        ctx.beginPath();
+        ctx.moveTo(nearTop.x,nearTop.y);
+        ctx.lineTo(nearBot.x,nearBot.y);
+        ctx.stroke();
+
+    }
 
 }
 // ======================================
