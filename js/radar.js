@@ -598,36 +598,69 @@ function drawTrafficCircuit(){
 
     const offset = nm(5);
 
-    const top1 = {
+    let top1 = {
         x:end1.x + px*offset,
         y:end1.y + py*offset
     };
 
-    const top2 = {
+    let top2 = {
         x:end2.x + px*offset,
         y:end2.y + py*offset
     };
 
-    const bot1 = {
+    let bot1 = {
         x:end1.x - px*offset,
         y:end1.y - py*offset
     };
 
-    const bot2 = {
+    let bot2 = {
         x:end2.x - px*offset,
         y:end2.y - py*offset
     };
 
+    // On the end that faces the active approach direction, the
+    // box's corners should touch the approach funnel line tips
+    // (e.g. the 230/290 bearing lines for RWY08) instead of the
+    // plain 5NM perpendicular offset - but still with no line
+    // drawn connecting those two corners to each other.
+    const funnelBearings = APPROACH_FUNNEL_BEARINGS[activeRunwayDirection];
+
+    if(funnelBearings){
+
+        const touchdown = getTouchdownPoint(activeRunwayDirection);
+        const approachBearing = getApproachBearing(activeRunwayDirection);
+        const apex = pointFromXY(touchdown, approachBearing, APPROACH_FUNNEL_APEX_NM);
+
+        const tipA = pointFromXY(apex, funnelBearings[0], APPROACH_FUNNEL_LENGTH_NM);
+        const tipB = pointFromXY(apex, funnelBearings[1], APPROACH_FUNNEL_LENGTH_NM);
+
+        const dotA = (tipA.x-apex.x)*px + (tipA.y-apex.y)*py;
+        const dotB = (tipB.x-apex.x)*px + (tipB.y-apex.y)*py;
+
+        const tipTop = dotA > dotB ? tipA : tipB;
+        const tipBot = dotA > dotB ? tipB : tipA;
+
+        if(activeRunwayDirection === rwy.label1){
+            top1 = tipTop;
+            bot1 = tipBot;
+        }
+        else if(activeRunwayDirection === rwy.label2){
+            top2 = tipTop;
+            bot2 = tipBot;
+        }
+
+    }
+
     ctx.strokeStyle="#FFFFFF";
     ctx.lineWidth=2;
 
-    // Upper edge only - no connecting line to end1/end2
+    // Upper edge only - no connecting line at either end
     ctx.beginPath();
     ctx.moveTo(top1.x,top1.y);
     ctx.lineTo(top2.x,top2.y);
     ctx.stroke();
 
-    // Lower edge only - no connecting line to end1/end2
+    // Lower edge only - no connecting line at either end
     ctx.beginPath();
     ctx.moveTo(bot1.x,bot1.y);
     ctx.lineTo(bot2.x,bot2.y);
