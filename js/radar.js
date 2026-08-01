@@ -354,13 +354,12 @@ const RWY_LANDING_HEADING = {"08":80, "26":260, "15":155, "33":335};
 // Two lines splaying outward (localiser capture "feathers"),
 // apex at 8.5 NM from touchdown on the extended centreline,
 // each 10 NM long. Drawn as open rays - never connected to
-// each other. Values as specified directly (not derived from
-// RWY_LANDING_HEADING, since 15/33 disagree with that table).
+// each other.
 const APPROACH_FUNNEL_BEARINGS = {
     "08": [230, 290],
     "26": [50, 110],
-    "15": [125, 185],
-    "33": [305, 5]
+    "15": [305, 5],
+    "33": [125, 185]
 };
 
 const APPROACH_FUNNEL_APEX_NM = 8.5;
