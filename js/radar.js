@@ -171,6 +171,39 @@ function getNDB(name){
 }
 
 // ======================================
+// Holding Patterns (right/left racetrack)
+// Only CCB, NT, PJ and BR are supported.
+// CCB has 4 published entries in the real
+// procedure (078/095 Right, 238/241 Left) -
+// defaulting to CCB-26 (ILS) 078 Right here
+// since it's usable regardless of VAD-99
+// status. Flag if a different one is wanted.
+// ======================================
+
+const HOLD_FIXES = {
+    "CCB": {inboundTrack:78, turn:"RIGHT", mha:30},
+    "NT":  {inboundTrack:90, turn:"LEFT",  mha:30},
+    "PJ":  {inboundTrack:10, turn:"LEFT",  mha:65},
+    "BR":  {inboundTrack:72, turn:"RIGHT", mha:65}
+};
+
+function getHoldFixPosition(name){
+
+    if(name === "CCB"){
+        return {x:CCB.x, y:CCB.y};
+    }
+
+    const ndb = getNDB(name);
+
+    if(ndb){
+        return {x:ndb.x, y:ndb.y};
+    }
+
+    return null;
+
+}
+
+// ======================================
 // Routes that originate from an NDB
 // rather than from CCB directly
 // ======================================
@@ -1656,6 +1689,31 @@ window.onload = function(){
             selectedAircraft.directToFix = btn.getAttribute("data-fix");
             selectedAircraft.established = false;
             selectedAircraft.locIntercept = false;
+            selectedAircraft.viaDumasRoute = false;
+            selectedAircraft.holdFix = null;
+            selectedAircraft.holdPhase = null;
+
+        };
+
+    });
+
+    const holdButtons = document.querySelectorAll(".holdBtn");
+
+    holdButtons.forEach(btn=>{
+
+        btn.onclick = function(){
+
+            if(selectedAircraft == null){
+                alert("Select an aircraft first.");
+                return;
+            }
+
+            selectedAircraft.holdFix = btn.getAttribute("data-fix");
+            selectedAircraft.holdPhase = null;
+            selectedAircraft.holdOutboundTimer = 0;
+
+            // A hold clearance supersedes any direct-to-fix routing
+            selectedAircraft.directToFix = null;
             selectedAircraft.viaDumasRoute = false;
 
         };
