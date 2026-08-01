@@ -351,6 +351,21 @@ function getRunway0826Geometry(){
 // Landing heading (direction of travel while touching down) per runway direction
 const RWY_LANDING_HEADING = {"08":80, "26":260, "15":155, "33":335};
 
+// Two lines splaying outward (localiser capture "feathers"),
+// apex at 8.5 NM from touchdown on the extended centreline,
+// each 10 NM long. Drawn as open rays - never connected to
+// each other. Values as specified directly (not derived from
+// RWY_LANDING_HEADING, since 15/33 disagree with that table).
+const APPROACH_FUNNEL_BEARINGS = {
+    "08": [230, 290],
+    "26": [50, 110],
+    "15": [125, 185],
+    "33": [305, 5]
+};
+
+const APPROACH_FUNNEL_APEX_NM = 8.5;
+const APPROACH_FUNNEL_LENGTH_NM = 10;
+
 // Two vector headings a controller would typically give to
 // intercept the localiser/centreline for each runway
 const INTERCEPT_HEADINGS = {
@@ -524,6 +539,42 @@ function drawCentreline(){
         ctx.stroke();
 
     }
+
+    ctx.restore();
+
+}
+
+// ======================================
+// Approach Funnel - two open lines (not
+// connected to each other) splaying out
+// from 8.5NM from touchdown, showing the
+// localiser capture area for the active
+// runway direction.
+// ======================================
+
+function drawApproachFunnel(){
+
+    const touchdown = getTouchdownPoint(activeRunwayDirection);
+    const approachBearing = getApproachBearing(activeRunwayDirection);
+
+    const apex = pointFromXY(touchdown, approachBearing, APPROACH_FUNNEL_APEX_NM);
+
+    const bearings = APPROACH_FUNNEL_BEARINGS[activeRunwayDirection] || [];
+
+    ctx.save();
+    ctx.strokeStyle = "#FFFFFF";
+    ctx.lineWidth = 1.5;
+
+    bearings.forEach(b=>{
+
+        const end = pointFromXY(apex, b, APPROACH_FUNNEL_LENGTH_NM);
+
+        ctx.beginPath();
+        ctx.moveTo(apex.x, apex.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+
+    });
 
     ctx.restore();
 
@@ -1371,6 +1422,7 @@ function drawRadar(){
     drawRunway();
     drawTrafficCircuit();
     drawCentreline();
+    drawApproachFunnel();
     drawCCB();
     drawNDBs();
     drawFixes();
