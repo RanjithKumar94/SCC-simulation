@@ -620,19 +620,17 @@ function drawTrafficCircuit(){
 
     ctx.strokeStyle="#FFFFFF";
     ctx.lineWidth=2;
+
+    // Upper edge only - no connecting line to end1/end2
     ctx.beginPath();
-    ctx.moveTo(end1.x,end1.y);
-    ctx.lineTo(top1.x,top1.y);
+    ctx.moveTo(top1.x,top1.y);
     ctx.lineTo(top2.x,top2.y);
-    ctx.lineTo(end2.x,end2.y);
     ctx.stroke();
 
-    // Lower box
+    // Lower edge only - no connecting line to end1/end2
     ctx.beginPath();
-    ctx.moveTo(end1.x,end1.y);
-    ctx.lineTo(bot1.x,bot1.y);
+    ctx.moveTo(bot1.x,bot1.y);
     ctx.lineTo(bot2.x,bot2.y);
-    ctx.lineTo(end2.x,end2.y);
     ctx.stroke();
 
 }
