@@ -115,6 +115,8 @@ document.getElementById("applyBtn").onclick = function(){
         selectedAircraft.targetHeading = parseInt(hdg) % 360;
         selectedAircraft.directToFix = null;
         selectedAircraft.viaDumasRoute = false;
+        selectedAircraft.holdFix = null;
+        selectedAircraft.holdPhase = null;
     }
 
     if(lvl !== "")
@@ -486,6 +488,98 @@ if(ac.heading !== ac.targetHeading){
             else{
 
                 ac.directToFix = null;
+
+            }
+
+        }
+
+        // ===============================
+        // Holding Pattern - fly to the hold
+        // fix, then race-track (simplified
+        // entry: turn and join the outbound
+        // leg directly, no parallel/offset
+        // sector logic).
+        // ===============================
+
+        if(ac.holdFix && typeof getHoldFixPosition === "function"){
+
+            const holdCfg = HOLD_FIXES[ac.holdFix];
+            const fixPos = getHoldFixPosition(ac.holdFix);
+
+            if(holdCfg && fixPos){
+
+                const hdx = fixPos.x - ac.x;
+                const hdy = fixPos.y - ac.y;
+
+                const distToHoldFixNM =
+                Math.sqrt(hdx*hdx + hdy*hdy) / PIXELS_PER_NM;
+
+                if(!ac.holdPhase){
+
+                    // Still inbound to the hold fix - home in on it
+                    if(distToHoldFixNM <= 1){
+
+                        ac.holdPhase = "OUTBOUND";
+                        ac.turnDirection = holdCfg.turn;
+                        ac.targetHeading = (holdCfg.inboundTrack + 180) % 360;
+                        ac.holdOutboundTimer = 0;
+
+                    }
+                    else{
+
+                        let bearingToHoldFix =
+                        (Math.atan2(hdy, hdx) * 180 / Math.PI) + 90;
+
+                        bearingToHoldFix = (bearingToHoldFix + 360) % 360;
+
+                        ac.targetHeading = Math.round(bearingToHoldFix) % 360;
+                        ac.turnDirection = "SHORTEST";
+
+                    }
+
+                }
+                else if(ac.holdPhase === "OUTBOUND"){
+
+                    // Only start timing once established on the
+                    // outbound heading (not still mid-turn)
+                    if(ac.heading === ac.targetHeading){
+
+                        ac.holdOutboundTimer = (ac.holdOutboundTimer || 0) + 1;
+
+                        // 1 min up to & incl FL140, 1.5 min above
+                        const outboundSec = ac.level > 140 ? 90 : 60;
+
+                        if(ac.holdOutboundTimer >= outboundSec){
+
+                            ac.holdPhase = "INBOUND";
+                            ac.turnDirection = holdCfg.turn;
+                            ac.targetHeading = holdCfg.inboundTrack;
+                            ac.holdOutboundTimer = 0;
+
+                        }
+
+                    }
+
+                }
+                else if(ac.holdPhase === "INBOUND"){
+
+                    if(distToHoldFixNM <= 1){
+
+                        // Crossed the fix inbound - fly another lap
+                        ac.holdPhase = "OUTBOUND";
+                        ac.turnDirection = holdCfg.turn;
+                        ac.targetHeading = (holdCfg.inboundTrack + 180) % 360;
+                        ac.holdOutboundTimer = 0;
+
+                    }
+
+                }
+
+            }
+            else{
+
+                ac.holdFix = null;
+                ac.holdPhase = null;
 
             }
 
